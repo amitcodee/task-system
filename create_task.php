@@ -2,6 +2,12 @@
 // Include the database configuration file
 require_once 'config.php';
 
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 // Fetch users from the members table for multiple selection
 $stmt = $pdo->prepare("SELECT id, name, email FROM members");
 $stmt->execute();
@@ -21,14 +27,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $dueDate = htmlspecialchars($_POST['dueDate']);
     $repeatTask = isset($_POST['repeatTask']) ? 1 : 0; // Checkbox for repeat task
     $assignMoreTasks = isset($_POST['assignMoreTasks']) ? 1 : 0; // Checkbox for assigning more tasks
+    $createdBy = $_SESSION['user_id']; // Store the logged-in user's ID
 
     try {
         // Begin a transaction
         $pdo->beginTransaction();
 
         // Prepare an SQL statement to insert the task into the tasks table
-        $stmt = $pdo->prepare("INSERT INTO tasks (title, description, category, priority, due_date, repeat_task, assign_more_tasks) 
-                               VALUES (:title, :description, :category, :priority, :due_date, :repeat_task, :assign_more_tasks)");
+        $stmt = $pdo->prepare("INSERT INTO tasks (title, description, category, priority, due_date, repeat_task, assign_more_tasks, created_by) 
+                               VALUES (:title, :description, :category, :priority, :due_date, :repeat_task, :assign_more_tasks, :created_by)");
 
         // Bind the parameters to the SQL query
         $stmt->bindParam(':title', $taskTitle);
@@ -38,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bindParam(':due_date', $dueDate);
         $stmt->bindParam(':repeat_task', $repeatTask);
         $stmt->bindParam(':assign_more_tasks', $assignMoreTasks);
+        $stmt->bindParam(':created_by', $createdBy);  // Bind the logged-in user's ID
 
         // Execute the SQL statement
         $stmt->execute();
@@ -68,6 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
